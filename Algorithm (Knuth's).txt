@@ -1,0 +1,25 @@
+Knuth's Algorithm (Algorytm Knutha) PL below
+
+---
+
+Using the mini-max method in the most efficient way, it uses the information derived from the judge's answer to narrow down the set of possible answers (SPA). 
+
+First attempt:
+The first fixed query is sent, and then the algorithm checks for which (of all possible) sequences the answer would be identical to the one received from the judge. There follows a narrowing down of the set of possible answers (SPA) to those sequences that passed the said test. 
+
+Each subsequent attempt:
+The next query (which does not have to belong to the SPA but only satisfies the characteristics length = n; number of colors = k) is selected so that the number of sequences in the SPA that will give the most popular answer is as small as possible. This procedure helps to make sure that in the worst-case scenario, when the judge receives an answer, the SPA will be narrowed down to just this number.
+
+Once the space of possible answers is narrowed to 1, that one is chosen as the next query.
+
+---
+
+Korzystając z metody mini-max w najbardziej efektywny sposób używa informacji wynikającej z odpowiedzi sędziego do zawężenia zbioru możliwych odpowiedzi (ZBO). 
+
+Pierwsza próba:
+Wysyłane zostaje pierwsze, ustalone zapytanie, a następnie algorytm sprawdza, dla których (spośród wszystkich możliwych) sekwencji odpowiedź byłaby identyczna z tą, którą otrzymał od sędziego. Następuje zawężenie zbioru możliwych odpowiedzi (ZBO) do tych sekwencji, które pozytywnie przeszły wspomniany test. 
+
+Każda kolejna próba:
+Kolejne zapytanie (które nie musi należeć do ZBO, a jedynie spełnia charakterystykę długość = n; l. kolorów = k) zostaje dobrane tak, by liczba sekwencji w ZBO, która da najbardziej popularną odpowiedź, była jak najmniejsza. Ten zabieg pozwala upewnić się, że w najgorszym wypadku, po otrzymaniu odpowiedzi od sędziego, ZBO zostanie zawężona właśnie do tej liczby.
+
+Po zawężeniu przestrzeni możliwych odpowiedzi do 1, ta wybierana jest jako następne zapytanie.
