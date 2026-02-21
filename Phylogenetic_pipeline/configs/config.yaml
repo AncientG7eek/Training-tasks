@@ -1,0 +1,20 @@
+experiment_name: "test"
+consensus:
+    minsup: 0.5
+supertree:
+    heuristic: "-Z"
+bootstrap_filter:
+    ufboot_thr: 70
+    sharlt_thr: 70
+ML_trees:
+    threads: 8
+    bootstrap_n: 100
+alignment:
+    threads: 8
+cluster_filter:
+    chunk_size: 5000000
+clustering:
+    threads: 8
+download_proteomes:
+    threads: 4
+    species_list_path: "configs/test_species_list.txt"

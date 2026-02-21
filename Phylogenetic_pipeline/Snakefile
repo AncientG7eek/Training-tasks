@@ -1,0 +1,167 @@
+configfile: "configs/config.yaml"
+
+rule all:
+    input: 
+        f"results/{config['experiment_name']}/consensus.contree",
+        f"results/{config['experiment_name']}/supertree.nwk",
+        f"results/{config['experiment_name']}/consensus_tree_comparison.png",
+        f"results/{config['experiment_name']}/supertree_comparison.png"
+
+rule plot_consensus_tree:
+    input:
+        cons="results/{experiment_name}/consensus.contree",
+        time="timetree.nwk",
+        ncbi="NCBI_tree.nwk"
+    output:
+        "results/{experiment_name}/consensus_tree_comparison.png"
+    script:
+        "scripts/plot_trees.py"
+
+rule plot_super_tree:
+    input:
+        cons="results/{experiment_name}/supertree.nwk",
+        time="timetree.nwk",
+        ncbi="NCBI_tree.nwk"
+    output:
+        "results/{experiment_name}/supertree_comparison.png"
+    script:
+        "scripts/plot_trees.py"
+
+rule consensus_tree:
+    input:
+        trees_filtered="intermediate_results/{experiment_name}/trees_filtered.nwk"
+    output:
+        "results/{experiment_name}/consensus.contree"
+    params:
+        minsup=config["consensus"]["minsup"],
+        prefix="results/{experiment_name}_consensus"
+    shell:
+        """
+        iqtree2 \
+            -con {input.trees_filtered} \
+            -minsup {params.minsup} \
+            -pre {params.prefix}
+        """
+
+rule supertree:
+    input:
+        trees_filtered="intermediate_results/{experiment_name}/trees_filtered.nwk"
+    output:
+        tsv="fasturec/{experiment_name}/trees_filtered.tsv",
+        tree="results/{experiment_name}/supertree.nwk"
+    params:
+        heuristic=config["supertree"]["heuristic"]
+    shell:
+        """
+        ./fasturec/fasturec \
+            -G {input.trees_filtered} \
+            {params.heuristic} \
+            -op 
+        
+        # extracting the best supertree
+        head -n 1 {output.tsv} | cut -f2 > {output.tree}
+        """
+
+rule filter_trees:
+    input:
+        trees="intermediate_results/{experiment_name}/trees"
+    output:
+        trees_filtered="intermediate_results/{experiment_name}/trees_filtered.nwk"
+    params:
+        ufboot_thr=config["bootstrap_filter"]["ufboot_thr"],
+        sharlt_thr=config["bootstrap_filter"]["sharlt_thr"]
+    script:
+        "scripts/bootstrap_filter.py"
+ 
+rule ML_trees:
+    input:
+        alignments="intermediate_results/{experiment_name}/alignments"
+    output:
+        ml_trees=directory("intermediate_results/{experiment_name}/trees")
+    params:
+        threads=config["ML_trees"]["threads"],
+        bootstrap_n=config["ML_trees"]["bootstrap_n"]
+    log:
+        "logs/{experiment_name}/iqtree_ML_trees.log"
+    shell:
+        """
+        bash scripts/infer_ML.sh \
+            {input.alignments} \
+            {output.ml_trees} \
+            {params.threads} \
+            {log} \
+            {params.bootstrap_n}
+        """
+
+rule msa:
+    input:
+        cluster_fasta="intermediate_results/{experiment_name}/clusters_fasta"
+    output:
+        alignment=directory("intermediate_results/{experiment_name}/alignments")
+    params:
+        threads=config["alignment"]["threads"]
+    log:
+        "logs/{experiment_name}/mafft.log"
+    shell:
+        """
+        bash scripts/align.sh \
+            {input.cluster_fasta} \
+            {output.alignment} \
+            {params.threads} \
+            {log}
+        """
+
+rule cluster_filter:
+    input:
+        clusters_tsv="intermediate_results/{experiment_name}/mmseqs/clusters.tsv",
+        search_result="intermediate_results/{experiment_name}/mmseqs/search_result.tsv",
+        all_proteins_fasta="intermediate_results/{experiment_name}/all_proteins.faa"
+    output:
+        clusters_fasta=directory("intermediate_results/{experiment_name}/clusters_fasta")
+    params:
+        chunk_size=config["cluster_filter"]["chunk_size"]
+    script:
+        "scripts/extract_1to1_families.py"
+
+rule clustering:
+    input:
+        all_proteins_fasta="intermediate_results/{experiment_name}/all_proteins.faa"
+    output:
+        clusters_tsv="intermediate_results/{experiment_name}/mmseqs/clusters.tsv",
+        search_result="intermediate_results/{experiment_name}/mmseqs/search_result.tsv"
+    params:
+        db_prefix="intermediate_results/{experiment_name}/mmseqs/proteinsDB",
+        result_prefix="intermediate_results/{experiment_name}/mmseqs/result",
+        tmp_prefix="intermediate_results/{experiment_name}/mmseqs/tmp",
+        clusters_prefix="intermediate_results/{experiment_name}/mmseqs/clusters",
+        threads=config["clustering"]["threads"]
+    shell:
+        """
+        bash script/mmseqs.sh \
+            {input.all_proteins_fasta} \
+            {params.db_prefix} \
+            {params.result_prefix} \
+            {params.tmp_prefix} \
+            {params.clusters_prefix} \
+            {params.threads} \
+            {output.search_result} \
+            {output.clusters_tsv} 
+        """
+        
+rule download_proteomes:
+    input:
+        species_list=config["download_proteomes"]["species_list_path"]
+    output:
+        proteomes=directory("intermediate_results/{experiment_name}/proteomes"),
+        all_proteins_fasta="intermediate_results/{experiment_name}/all_proteins.faa"
+    params:
+        threads=config["download_proteomes"]["threads"]
+    shell:
+        """
+        bash scripts/download_proteomes.sh \
+            {input.species_list} \
+            {params.threads} \
+            {output.proteomes} \
+            {output.all_proteins_fasta} 
+        """
+

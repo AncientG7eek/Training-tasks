@@ -1,0 +1,3 @@
+Mycoplasma genitalium G37
+Escherichia coli K-12 MG1655
+Bacillus subtilis 168
